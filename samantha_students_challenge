@@ -1,8 +1,36 @@
-with grouped_data as (
-    select challenges.challenge_id,sum(total_views) views_total,sum(total_unique_views) views_unique from challenges
-    inner join view_stats on view_stats.challenge_id = challenges.challenge_id group by challenges.challenge_id)
-
-,grouped_subs as (select challenges.challenge_id,sum(total_submissions) total_subs,sum(total_accepted_submissions) total_subs_accepted from challenges inner join                                                                                                                                                                                                                                                                                                                                                                  Submission_Stats on submission_stats.challenge_id = challenges.challenge_id group by challenges.challenge_id)
-select base.contest_id,base.hacker_id,base.name,sum(total_subs),sum(total_subs_accepted),sum(views_total),sum(views_unique) from Contests base
-join colleges on colleges.contest_id = base.contest_id  join challenges on challenges.college_id = colleges.college_id left join grouped_data on grouped_data.challenge_id = challenges.challenge_id
-left join grouped_subs on grouped_subs.challenge_id = challenges.challenge_id group by base.contest_id,hacker_id,name;
+WITH grouped_data
+         AS (SELECT challenges.challenge_id,
+                    Sum(total_views)        views_total,
+                    Sum(total_unique_views) views_unique
+             FROM   challenges
+                        INNER JOIN view_stats
+                                   ON view_stats.challenge_id = challenges.challenge_id
+             GROUP  BY challenges.challenge_id),
+     grouped_subs
+         AS (SELECT challenges.challenge_id,
+                    Sum(total_submissions)          total_subs,
+                    Sum(total_accepted_submissions) total_subs_accepted
+             FROM   challenges
+                        INNER JOIN submission_stats
+                                   ON submission_stats.challenge_id =
+                                      challenges.challenge_id
+             GROUP  BY challenges.challenge_id)
+SELECT base.contest_id,
+       base.hacker_id,
+       base.NAME,
+       Sum(total_subs),
+       Sum(total_subs_accepted),
+       Sum(views_total),
+       Sum(views_unique)
+FROM   contests base
+           JOIN colleges
+                ON colleges.contest_id = base.contest_id
+           JOIN challenges
+                ON challenges.college_id = colleges.college_id
+           LEFT JOIN grouped_data
+                     ON grouped_data.challenge_id = challenges.challenge_id
+           LEFT JOIN grouped_subs
+                     ON grouped_subs.challenge_id = challenges.challenge_id
+GROUP  BY base.contest_id,
+          hacker_id,
+          NAME;
