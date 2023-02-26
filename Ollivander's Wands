@@ -1,0 +1,21 @@
+WITH base_table
+     AS (SELECT id,
+                age,
+                power,
+                Row_number()
+                  OVER(
+                    partition BY age, power
+                    ORDER BY coins_needed ASC) rn,
+                coins_needed
+         FROM   wands
+                INNER JOIN wands_property
+                        ON wands_property.code = wands.code
+         WHERE  is_evil = 0)
+SELECT id,
+       age,
+       coins_needed,
+       power
+FROM   base_table
+WHERE  rn = 1
+ORDER  BY power DESC,
+          age DESC;
