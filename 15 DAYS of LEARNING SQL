@@ -1,0 +1,46 @@
+WITH max_hacker
+         AS (SELECT Count(*),
+                    Row_number()
+                        OVER (
+                    partition BY submission_date
+                    ORDER BY Count(*)DESC, hacker_id ASC) rn,
+                     hacker_id,
+                    submission_date
+             FROM   submissions
+             GROUP  BY submission_date,
+                       hacker_id
+             ORDER  BY Count(*) DESC),
+-- getting hacker with maximum submissions order by count(*)
+     dis_hackers
+         AS (SELECT DISTINCT hacker_id,
+                             submission_date
+             FROM   submissions),
+     joined_tab
+         AS (SELECT Row_number ()
+                        OVER (
+                    partition BY hacker_id
+                    ORDER BY submission_date ASC)                     rn,
+                         submission_date - To_date('2016-02-29', 'YYYY-MM-DD') day_diff,
+                    hacker_id,
+                    submission_date
+             FROM   dis_hackers),
+-- from a table with distinct hackers getting those who have appeared equal to the date difference between current date and start date -1
+     -- joined_tab as (select dis1.* from dis_hackers dis1 inner join dis_hackers dis2 on ((dis1.submission_date - 1 = dis2.submission_date and dis1.hacker_id = dis2.hacker_id) or to_char(dis1.submission_date) = '2016-03-01')),
+     --joining all and getting final output
+     sub_count
+         AS (SELECT Count(DISTINCT joined_tab.hacker_id)cnt_hacker,
+                    submission_date
+             FROM   joined_tab
+             WHERE  rn = day_diff
+             GROUP  BY submission_date)
+SELECT sub_count.submission_date,
+       cnt_hacker,
+       max_hacker.hacker_id,
+       hackers.NAME
+FROM   sub_count
+           INNER JOIN max_hacker
+                      ON max_hacker.submission_date = sub_count.submission_date
+                          AND rn = 1
+           INNER JOIN hackers
+                      ON hackers.hacker_id = max_hacker.hacker_id
+ORDER  BY submission_date ASC;
